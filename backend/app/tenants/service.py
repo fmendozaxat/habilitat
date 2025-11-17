@@ -373,3 +373,28 @@ class TenantService:
                 Tenant.subdomain.ilike(search_term)
             )
         ).offset(skip).limit(limit).all()
+
+    @staticmethod
+    def check_user_limit(db: Session, tenant_id: int) -> bool:
+        """
+        Check if tenant can add more users.
+
+        Args:
+            db: Database session
+            tenant_id: Tenant ID
+
+        Returns:
+            True if tenant can add more users, False otherwise
+        """
+        tenant = TenantService.get_tenant_by_id(db, tenant_id)
+
+        # Import here to avoid circular dependency
+        from app.users.models import User
+
+        # Count active users
+        user_count = db.query(User).filter(
+            User.tenant_id == tenant_id,
+            User.deleted_at.is_(None)
+        ).count()
+
+        return user_count < tenant.max_users

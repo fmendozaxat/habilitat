@@ -85,17 +85,17 @@ class Tenant(BaseModel, TimestampMixin, SoftDeleteMixin):
     """
 
     # Relationships
-    # NOTE: These will be uncommented as modules are implemented
-    # users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
-    # onboarding_flows = relationship("OnboardingFlow", back_populates="tenant", cascade="all, delete-orphan")
-    # content_blocks = relationship("ContentBlock", back_populates="tenant", cascade="all, delete-orphan")
-
+    users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
     branding = relationship(
         "TenantBranding",
         back_populates="tenant",
         uselist=False,
         cascade="all, delete-orphan"
     )
+
+    # NOTE: These will be uncommented as modules are implemented
+    # onboarding_flows = relationship("OnboardingFlow", back_populates="tenant", cascade="all, delete-orphan")
+    # content_blocks = relationship("ContentBlock", back_populates="tenant", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Tenant {self.name} ({self.slug})>"

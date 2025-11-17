@@ -18,7 +18,7 @@ from app.core.database import Base
 # Import all models here to ensure they are registered with Base.metadata
 # This is crucial for autogenerate to detect model changes
 from app.tenants.models import Tenant, TenantBranding  # noqa: F401
-from app.users.models import User  # noqa: F401
+from app.users.models import User, UserInvitation  # noqa: F401
 from app.auth.models import RefreshToken, PasswordResetToken, EmailVerificationToken  # noqa: F401
 
 # TODO: Import models from other modules as they are created
