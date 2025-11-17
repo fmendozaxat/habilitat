@@ -48,6 +48,8 @@ class ContentType(str, Enum):
         VIDEO: Video files (MP4, WebM)
         PDF: PDF documents
         LINK: External links/URLs
+        QUIZ: Interactive quiz/assessment
+        TASK: Task or checklist to complete
     """
 
     TEXT = "text"
@@ -55,6 +57,8 @@ class ContentType(str, Enum):
     VIDEO = "video"
     PDF = "pdf"
     LINK = "link"
+    QUIZ = "quiz"
+    TASK = "task"
 
 
 class NotificationType(str, Enum):

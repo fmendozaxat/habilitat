@@ -41,9 +41,7 @@ class User(BaseModel, TimestampMixin, SoftDeleteMixin):
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
     email_verification_tokens = relationship("EmailVerificationToken", back_populates="user", cascade="all, delete-orphan")
-
-    # Will be enabled when Onboarding module is implemented
-    # onboarding_assignments = relationship("OnboardingAssignment", back_populates="user")
+    onboarding_assignments = relationship("OnboardingAssignment", foreign_keys="OnboardingAssignment.user_id", back_populates="user")
 
     def __repr__(self):
         return f"<User {self.email}>"
