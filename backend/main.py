@@ -159,16 +159,18 @@ async def api_root():
 
 # Import routers
 from app.tenants.router import router as tenants_router
+from app.auth.router import router as auth_router
 
 # Register routers
 app.include_router(tenants_router, prefix=settings.API_PREFIX)
+app.include_router(auth_router, prefix=settings.API_PREFIX)
 
 # TODO: Register additional module routers as they are developed
-# from app.auth.router import router as auth_router
 # from app.users.router import router as users_router
+# from app.onboarding.router import router as onboarding_router
 #
-# app.include_router(auth_router, prefix=f"{settings.API_PREFIX}/auth", tags=["Authentication"])
-# app.include_router(users_router, prefix=f"{settings.API_PREFIX}/users", tags=["Users"])
+# app.include_router(users_router, prefix=settings.API_PREFIX)
+# app.include_router(onboarding_router, prefix=settings.API_PREFIX)
 
 
 # ============================================================================
