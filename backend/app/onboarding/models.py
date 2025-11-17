@@ -120,6 +120,7 @@ class OnboardingModule(BaseModel, TimestampMixin):
 
     # Relationships
     flow = relationship("OnboardingFlow", back_populates="modules")
+    content = relationship("ContentBlock", back_populates="onboarding_modules", foreign_keys=[content_id])
     progress_records = relationship(
         "ModuleProgress",
         back_populates="module",
