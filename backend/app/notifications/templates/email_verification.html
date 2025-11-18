@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Verifica tu Email</h2>
+
+<p>Hola {{ user_name }},</p>
+
+<p>Gracias por registrarte en {{ app_name }}. Para completar tu registro, necesitamos verificar tu dirección de email.</p>
+
+<p>Por favor, haz clic en el siguiente botón para verificar tu cuenta:</p>
+
+<center>
+    <a href="{{ verify_url }}" class="button">Verificar Email</a>
+</center>
+
+<p>Si no creaste una cuenta en {{ app_name }}, puedes ignorar este email de manera segura.</p>
+
+<p><small><strong>Nota:</strong> Este enlace expirará en 24 horas.</small></p>
+
+<p>Saludos,<br>El equipo de {{ app_name }}</p>
+{% endblock %}

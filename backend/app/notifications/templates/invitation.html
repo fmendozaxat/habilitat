@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Has sido invitado a {{ tenant_name }}</h2>
+
+<p>Hola,</p>
+
+<p>{{ inviter_name }} te ha invitado a unirte a <strong>{{ tenant_name }}</strong> en {{ app_name }}.</p>
+
+<p>Para aceptar la invitación y crear tu cuenta, haz clic en el siguiente botón:</p>
+
+<center>
+    <a href="{{ accept_url }}" class="button">Aceptar Invitación</a>
+</center>
+
+<p>Si no solicitaste esta invitación, puedes ignorar este email de manera segura.</p>
+
+<p><small><strong>Nota:</strong> Este enlace expirará en 7 días.</small></p>
+
+<p>Saludos,<br>El equipo de {{ tenant_name }}</p>
+{% endblock %}

@@ -23,6 +23,7 @@ from app.auth.models import RefreshToken, PasswordResetToken, EmailVerificationT
 from app.onboarding.models import OnboardingFlow, OnboardingModule, OnboardingAssignment, ModuleProgress  # noqa: F401
 
 from app.content.models import ContentCategory, ContentBlock  # noqa: F401
+from app.notifications.models import EmailLog  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

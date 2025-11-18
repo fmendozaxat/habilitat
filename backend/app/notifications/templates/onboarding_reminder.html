@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Recordatorio: Onboarding Pendiente</h2>
+
+<p>Hola {{ user_name }},</p>
+
+<p>Este es un recordatorio amistoso sobre tu onboarding pendiente: <strong>{{ flow_title }}</strong></p>
+
+<p>Actualmente has completado el <strong>{{ progress_percentage }}%</strong> del proceso. ¡Vas muy bien!</p>
+
+<p>Te animamos a continuar con los módulos restantes cuando tengas un momento. Completar el onboarding te ayudará a integrarte mejor al equipo y aprovechar al máximo los recursos de {{ tenant_name }}.</p>
+
+<center>
+    <a href="{{ dashboard_url }}" class="button">Continuar Onboarding</a>
+</center>
+
+<p>Si tienes alguna pregunta o necesitas asistencia, no dudes en contactarnos.</p>
+
+<p>Saludos,<br>El equipo de {{ tenant_name }}</p>
+{% endblock %}
