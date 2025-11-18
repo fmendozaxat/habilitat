@@ -1,6 +1,6 @@
 """Auth API router."""
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.exceptions import UnauthorizedException, ValidationException
@@ -20,6 +20,7 @@ from app.users.service import UserService
 from app.users.models import User
 from app.tenants.dependencies import get_current_tenant
 from app.tenants.models import Tenant
+from app.notifications.service import NotificationService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -27,6 +28,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     data: RegisterRequest,
+    background_tasks: BackgroundTasks,
     tenant: Tenant = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
@@ -34,7 +36,7 @@ async def register(
     Register a new user.
 
     Creates a new user account and returns authentication tokens.
-    Email verification token is created but email sending is not implemented yet.
+    Sends email verification link to user's email.
     """
     # Validate password strength is already done in schema
 
@@ -52,8 +54,16 @@ async def register(
     # Create email verification token
     verification_token = AuthService.create_email_verification_token(db, user.id)
 
-    # TODO: Send verification email
-    # email_service.send_verification_email(user.email, verification_token.token)
+    # Send verification email in background
+    background_tasks.add_task(
+        NotificationService.send_email_verification,
+        db,
+        user.email,
+        user.full_name,
+        verification_token.token,
+        user.tenant_id,
+        user.id
+    )
 
     # Create tokens
     tokens = AuthService.create_tokens(db, user)
@@ -177,6 +187,7 @@ async def get_me(current_user: User = Depends(get_current_active_user)):
 @router.post("/password-reset/request", status_code=status.HTTP_202_ACCEPTED)
 async def request_password_reset(
     data: PasswordResetRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     """
@@ -188,8 +199,19 @@ async def request_password_reset(
     try:
         reset_token = AuthService.create_password_reset_token(db, data.email)
 
-        # TODO: Send password reset email
-        # email_service.send_password_reset_email(data.email, reset_token.token)
+        # Get user for email details
+        user = UserService.get_user_by_email(db, data.email)
+        if user:
+            # Send password reset email in background
+            background_tasks.add_task(
+                NotificationService.send_password_reset_email,
+                db,
+                user.email,
+                user.full_name,
+                reset_token.token,
+                user.tenant_id,
+                user.id
+            )
 
     except ValidationException:
         # Don't reveal if email exists or not
@@ -232,6 +254,7 @@ async def verify_email(
 
 @router.post("/email/resend-verification", status_code=status.HTTP_202_ACCEPTED)
 async def resend_verification_email(
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -245,7 +268,15 @@ async def resend_verification_email(
 
     verification_token = AuthService.create_email_verification_token(db, current_user.id)
 
-    # TODO: Send verification email
-    # email_service.send_verification_email(current_user.email, verification_token.token)
+    # Send verification email in background
+    background_tasks.add_task(
+        NotificationService.send_email_verification,
+        db,
+        current_user.email,
+        current_user.full_name,
+        verification_token.token,
+        current_user.tenant_id,
+        current_user.id
+    )
 
     return {"message": "Email de verificación enviado"}

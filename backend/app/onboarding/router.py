@@ -1,6 +1,6 @@
 """Onboarding API router."""
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.schemas import SuccessResponse, PaginatedResponse
@@ -12,6 +12,7 @@ from app.users.models import User
 from app.auth.dependencies import get_current_user, get_current_active_user, require_any_role
 from app.tenants.models import Tenant
 from app.tenants.dependencies import get_current_tenant
+from app.notifications.service import NotificationService
 
 router = APIRouter(prefix="/onboarding", tags=["Onboarding"])
 
@@ -336,6 +337,7 @@ async def delete_module(
 @router.post("/assignments", response_model=schemas.OnboardingAssignmentResponse, status_code=status.HTTP_201_CREATED)
 async def assign_flow(
     data: schemas.OnboardingAssignmentCreate,
+    background_tasks: BackgroundTasks,
     tenant: Tenant = Depends(get_current_tenant),
     current_user: User = Depends(require_any_role(UserRole.TENANT_ADMIN, UserRole.SUPER_ADMIN)),
     db: Session = Depends(get_db)
@@ -344,9 +346,24 @@ async def assign_flow(
     Assign flow to a user.
 
     Creates assignment and module progress records.
+    Sends email notification to assigned user.
     Requires TENANT_ADMIN or SUPER_ADMIN role.
     """
     assignment = OnboardingService.assign_flow(db, tenant.id, data, current_user.id)
+
+    # Send onboarding assignment email in background
+    assigned_user = db.query(User).filter(User.id == assignment.user_id).first()
+    if assigned_user:
+        background_tasks.add_task(
+            NotificationService.send_onboarding_assigned_email,
+            db,
+            assigned_user.email,
+            assigned_user.full_name,
+            assignment.flow.title,
+            tenant.id,
+            tenant,
+            assigned_user.id
+        )
 
     module_progress = [
         schemas.ModuleProgressResponse(
@@ -384,6 +401,7 @@ async def assign_flow(
 @router.post("/assignments/bulk", response_model=list[schemas.OnboardingAssignmentResponse], status_code=status.HTTP_201_CREATED)
 async def bulk_assign_flow(
     data: schemas.BulkAssignmentCreate,
+    background_tasks: BackgroundTasks,
     tenant: Tenant = Depends(get_current_tenant),
     current_user: User = Depends(require_any_role(UserRole.TENANT_ADMIN, UserRole.SUPER_ADMIN)),
     db: Session = Depends(get_db)
@@ -392,9 +410,25 @@ async def bulk_assign_flow(
     Assign flow to multiple users at once.
 
     Skips users who already have the flow assigned.
+    Sends email notifications to all assigned users.
     Requires TENANT_ADMIN or SUPER_ADMIN role.
     """
     assignments = OnboardingService.bulk_assign_flow(db, tenant.id, data, current_user.id)
+
+    # Send onboarding assignment emails in background for all new assignments
+    for assignment in assignments:
+        assigned_user = db.query(User).filter(User.id == assignment.user_id).first()
+        if assigned_user:
+            background_tasks.add_task(
+                NotificationService.send_onboarding_assigned_email,
+                db,
+                assigned_user.email,
+                assigned_user.full_name,
+                assignment.flow.title,
+                tenant.id,
+                tenant,
+                assigned_user.id
+            )
 
     return [
         schemas.OnboardingAssignmentResponse(

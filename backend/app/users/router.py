@@ -1,6 +1,6 @@
 """User API router."""
 
-from fastapi import APIRouter, Depends, status, UploadFile, File, Query
+from fastapi import APIRouter, Depends, status, UploadFile, File, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.schemas import SuccessResponse, PaginatedResponse
@@ -13,6 +13,7 @@ from app.users.models import User
 from app.auth.dependencies import get_current_user, get_current_active_user, require_role, require_any_role
 from app.tenants.models import Tenant
 from app.tenants.dependencies import get_current_tenant
+from app.notifications.service import NotificationService
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -306,6 +307,7 @@ async def delete_user(
 @router.post("/invitations", response_model=schemas.UserInvitationResponse, status_code=status.HTTP_201_CREATED)
 async def invite_user(
     data: schemas.InviteUserRequest,
+    background_tasks: BackgroundTasks,
     tenant: Tenant = Depends(get_current_tenant),
     current_user: User = Depends(require_any_role(UserRole.TENANT_ADMIN, UserRole.SUPER_ADMIN)),
     db: Session = Depends(get_db)
@@ -323,8 +325,16 @@ async def invite_user(
         data
     )
 
-    # TODO: Send invitation email (will be implemented in notifications module)
-    # await notifications_service.send_invitation_email(invitation)
+    # Send invitation email in background
+    background_tasks.add_task(
+        NotificationService.send_invitation_email,
+        db,
+        invitation.email,
+        invitation.token,
+        current_user.full_name,
+        tenant.id,
+        tenant
+    )
 
     return schemas.UserInvitationResponse(
         id=invitation.id,
@@ -370,6 +380,7 @@ async def list_invitations(
 @router.post("/invitations/accept", response_model=schemas.UserResponse)
 async def accept_invitation(
     data: schemas.AcceptInvitationRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     """
@@ -379,6 +390,21 @@ async def accept_invitation(
     Creates a new user account based on the invitation token.
     """
     user = UserService.accept_invitation(db, data.token, data)
+
+    # Get tenant for welcome email
+    tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+
+    # Send welcome email in background
+    if tenant:
+        background_tasks.add_task(
+            NotificationService.send_welcome_email,
+            db,
+            user.email,
+            user.full_name,
+            tenant.id,
+            tenant,
+            user.id
+        )
 
     return schemas.UserResponse(
         id=user.id,
