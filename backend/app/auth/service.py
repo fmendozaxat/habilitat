@@ -1,6 +1,6 @@
 """Auth business logic service."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import verify_password, hash_password, create_access_token, create_refresh_token
@@ -35,7 +35,7 @@ class AuthService:
         access_token = create_access_token(access_token_data)
         refresh_token = create_refresh_token({"sub": str(user.id)})
 
-        expires_at = datetime.utcnow() + timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
 
         db_refresh_token = RefreshToken(
             token=refresh_token,
@@ -90,7 +90,7 @@ class AuthService:
             raise ValidationException("Si el email existe, recibirás instrucciones")
 
         token = generate_random_string(32)
-        expires_at = datetime.utcnow() + timedelta(hours=1)
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
 
         reset_token = PasswordResetToken(
             token=token,
@@ -122,7 +122,7 @@ class AuthService:
     def create_email_verification_token(db: Session, user_id: int) -> EmailVerificationToken:
         """Create email verification token."""
         token = generate_random_string(32)
-        expires_at = datetime.utcnow() + timedelta(days=7)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
 
         verification_token = EmailVerificationToken(
             token=token,

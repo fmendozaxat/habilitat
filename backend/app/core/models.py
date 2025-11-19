@@ -3,7 +3,7 @@ Base models and mixins for all database models.
 Provides common functionality like timestamps, soft deletes, and tenant scoping.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, DateTime
 from sqlalchemy.ext.declarative import declared_attr
 from app.core.database import Base
@@ -17,15 +17,15 @@ class TimestampMixin:
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         nullable=False,
         index=True
     )
 
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False
     )
 
@@ -67,7 +67,7 @@ class SoftDeleteMixin:
 
     def soft_delete(self) -> None:
         """Mark record as deleted."""
-        self.deleted_at = datetime.utcnow()
+        self.deleted_at = datetime.now(timezone.utc)
 
     def restore(self) -> None:
         """Restore a soft deleted record."""

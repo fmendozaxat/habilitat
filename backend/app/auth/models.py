@@ -1,6 +1,6 @@
 """Auth models for token management."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.core.models import BaseModel, TimestampMixin
@@ -20,7 +20,7 @@ class RefreshToken(BaseModel, TimestampMixin):
 
     @property
     def is_expired(self) -> bool:
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
     @property
     def is_valid(self) -> bool:
@@ -41,7 +41,7 @@ class PasswordResetToken(BaseModel, TimestampMixin):
 
     @property
     def is_expired(self) -> bool:
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
     @property
     def is_valid(self) -> bool:
@@ -66,4 +66,4 @@ class EmailVerificationToken(BaseModel, TimestampMixin):
 
     @property
     def is_expired(self) -> bool:
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at

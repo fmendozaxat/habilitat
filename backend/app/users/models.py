@@ -13,6 +13,15 @@ class User(BaseTenantModel, SoftDeleteMixin):
 
     __tablename__ = "users"
 
+    # Explicit Foreign Key to Tenant (overrides TenantMixin's column)
+    tenant_id = Column(
+        Integer,
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="Foreign key to tenant"
+    )
+
     # Basic info
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)

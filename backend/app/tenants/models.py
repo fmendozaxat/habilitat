@@ -124,9 +124,13 @@ class Tenant(BaseModel, TimestampMixin, SoftDeleteMixin):
 
         Returns:
             Number of users
+
+        Note:
+            Returns 0 if relationship is not loaded. Use with caution in queries
+            to avoid N+1 problems. Consider using a dedicated query method instead.
         """
-        # TODO: Implement when User model is available
-        # return len(self.users)
+        if hasattr(self, 'users') and self.users is not None:
+            return len(self.users)
         return 0
 
     @property

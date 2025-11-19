@@ -3,7 +3,7 @@ Security utilities for authentication and authorization.
 Handles password hashing, JWT token creation/validation, and security helpers.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any
 from passlib.context import CryptContext
 from jose import jwt, JWTError
@@ -63,16 +63,16 @@ def create_access_token(
 
     # Set expiration
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(timezone.utc) + timedelta(
             minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
     # Add standard claims
     to_encode.update({
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(timezone.utc),
         "type": "access"
     })
 
@@ -102,14 +102,14 @@ def create_refresh_token(data: Dict[str, Any]) -> str:
     to_encode = data.copy()
 
     # Set expiration (longer than access token)
-    expire = datetime.utcnow() + timedelta(
+    expire = datetime.now(timezone.utc) + timedelta(
         days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS
     )
 
     # Add standard claims
     to_encode.update({
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(timezone.utc),
         "type": "refresh"
     })
 
@@ -189,12 +189,12 @@ def create_email_verification_token(email: str, user_id: int) -> str:
         "purpose": "email_verification"
     }
 
-    expire = datetime.utcnow() + timedelta(seconds=EMAIL_VERIFICATION_TOKEN_EXPIRE)
+    expire = datetime.now(timezone.utc) + timedelta(seconds=EMAIL_VERIFICATION_TOKEN_EXPIRE)
 
     to_encode = data.copy()
     to_encode.update({
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(timezone.utc),
     })
 
     return jwt.encode(
@@ -223,12 +223,12 @@ def create_password_reset_token(email: str, user_id: int) -> str:
         "purpose": "password_reset"
     }
 
-    expire = datetime.utcnow() + timedelta(seconds=PASSWORD_RESET_TOKEN_EXPIRE)
+    expire = datetime.now(timezone.utc) + timedelta(seconds=PASSWORD_RESET_TOKEN_EXPIRE)
 
     to_encode = data.copy()
     to_encode.update({
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(timezone.utc),
     })
 
     return jwt.encode(

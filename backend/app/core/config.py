@@ -23,6 +23,19 @@ class Settings(BaseSettings):
     DATABASE_POOL_SIZE: int = 5
     DATABASE_MAX_OVERFLOW: int = 10
 
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        """Validate that DATABASE_URL is properly configured and uses PostgreSQL."""
+        if not v:
+            raise ValueError("DATABASE_URL is required and cannot be empty")
+        if not v.startswith("postgresql://") and not v.startswith("postgresql+psycopg2://"):
+            raise ValueError(
+                "DATABASE_URL must use PostgreSQL. "
+                "Expected format: postgresql://user:password@host:port/database"
+            )
+        return v
+
     # JWT
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
