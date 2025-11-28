@@ -85,8 +85,8 @@ class Tenant(BaseModel, TimestampMixin, SoftDeleteMixin):
     """
 
     # Relationships
+    users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
     # NOTE: These will be uncommented as modules are implemented
-    # users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
     # onboarding_flows = relationship("OnboardingFlow", back_populates="tenant", cascade="all, delete-orphan")
     # content_blocks = relationship("ContentBlock", back_populates="tenant", cascade="all, delete-orphan")
 

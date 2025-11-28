@@ -1,12 +1,15 @@
 """
 Users module initialization.
-Basic user exports for Auth module. Will be extended in Users module.
+Exports user models, service, schemas, and router.
 """
 
-from app.users.models import User
+from app.users.models import User, UserInvitation
 from app.users.service import UserService
+from app.users.router import router
 
 __all__ = [
     "User",
+    "UserInvitation",
     "UserService",
+    "router",
 ]

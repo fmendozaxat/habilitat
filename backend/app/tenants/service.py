@@ -304,11 +304,15 @@ class TenantService:
         Raises:
             NotFoundException: If tenant not found
         """
+        from app.users.models import User
+
         tenant = TenantService.get_tenant_by_id(db, tenant_id)
 
-        # TODO: Implement when User model is available
-        # current_user_count = len(tenant.users)
-        current_user_count = 0
+        # Count active users in tenant
+        current_user_count = db.query(User).filter(
+            User.tenant_id == tenant_id,
+            User.deleted_at.is_(None)
+        ).count()
 
         return current_user_count < tenant.max_users
 
@@ -327,10 +331,17 @@ class TenantService:
         Raises:
             NotFoundException: If tenant not found
         """
+        from app.users.models import User
+
         tenant = TenantService.get_tenant_by_id(db, tenant_id)
 
-        # TODO: Calculate actual values when modules are implemented
-        users_count = 0  # len(tenant.users)
+        # Count active users
+        users_count = db.query(User).filter(
+            User.tenant_id == tenant_id,
+            User.deleted_at.is_(None)
+        ).count()
+
+        # TODO: Calculate when modules are implemented
         onboarding_flows_count = 0  # len(tenant.onboarding_flows)
         storage_used_mb = 0.0  # Calculate from uploaded files
 

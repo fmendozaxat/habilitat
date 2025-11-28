@@ -270,11 +270,33 @@ mypy app/
 - ✅ Enums y constantes globales
 - ✅ Tests con >80% coverage
 
+### Módulo Auth ✅
+
+- ✅ Login/Logout con JWT
+- ✅ Access y Refresh tokens
+- ✅ Password reset flow
+- ✅ Email verification tokens
+- ✅ Role-based dependencies
+
+### Módulo Tenants ✅
+
+- ✅ CRUD de organizaciones
+- ✅ Gestión de branding
+- ✅ Middleware de resolución de tenant
+- ✅ Límites de usuarios y storage
+
+### Módulo Users ✅
+
+- ✅ CRUD de usuarios
+- ✅ Perfil de usuario (avatar, phone, job_title, department)
+- ✅ Cambio de contraseña
+- ✅ Sistema de invitaciones
+- ✅ Upload de avatar
+- ✅ Filtros y búsqueda
+- ✅ Validación de límites de tenant
+
 ### Próximos Módulos
 
-- ⏳ Módulo Auth (Autenticación y autorización)
-- ⏳ Módulo Tenants (Gestión multitenant)
-- ⏳ Módulo Users (Gestión de usuarios)
 - ⏳ Módulo Onboarding (Flujos de onboarding)
 - ⏳ Módulo Content (CMS)
 - ⏳ Módulo Analytics (Reportes)
