@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}¡Proceso Completado!{% endblock %}
+
+{% block content %}
+<h1>¡Felicitaciones!</h1>
+
+<p>Hola {{ user_name }},</p>
+
+<p>Has completado exitosamente el proceso <strong>{{ flow_title }}</strong> en {{ tenant_name }}.</p>
+
+<div class="highlight" style="text-align: center;">
+    <p style="font-size: 48px; margin: 0;">🎉</p>
+    <p><strong>¡Excelente trabajo!</strong></p>
+    <p>Completado el {{ completion_date }}</p>
+</div>
+
+<p>Tu dedicación y esfuerzo son muy valorados. Este logro demuestra tu compromiso con tu desarrollo profesional.</p>
+
+<p>Si tienes otros procesos pendientes, recuerda completarlos dentro de sus fechas límite.</p>
+
+<p>¡Sigue así!</p>
+{% endblock %}

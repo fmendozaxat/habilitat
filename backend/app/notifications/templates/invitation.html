@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Invitación a {{ tenant_name }}{% endblock %}
+
+{% block content %}
+<h1>Has sido invitado</h1>
+
+<p><strong>{{ inviter_name }}</strong> te ha invitado a unirte a <strong>{{ tenant_name }}</strong> en Habilitat.</p>
+
+<p>Habilitat es una plataforma de onboarding que te ayudará a completar tu proceso de incorporación de manera organizada y eficiente.</p>
+
+<div class="highlight">
+    <p><strong>Detalles de la invitación:</strong></p>
+    <ul>
+        <li>Organización: {{ tenant_name }}</li>
+        <li>Invitado por: {{ inviter_name }}</li>
+        <li>Válido hasta: {{ expires_at }}</li>
+    </ul>
+</div>
+
+<p style="text-align: center;">
+    <a href="{{ accept_url }}" class="button">Aceptar Invitación</a>
+</p>
+
+<p><small>Este enlace expirará el {{ expires_at }}. Si no esperabas esta invitación, puedes ignorar este correo.</small></p>
+{% endblock %}

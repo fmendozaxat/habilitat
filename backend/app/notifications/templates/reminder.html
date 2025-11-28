@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Recordatorio: Proceso Pendiente{% endblock %}
+
+{% block content %}
+<h1>Recordatorio</h1>
+
+<p>Hola {{ user_name }},</p>
+
+<p>Te recordamos que tienes un proceso de onboarding pendiente: <strong>{{ flow_title }}</strong>.</p>
+
+<div class="highlight">
+    <p><strong>Tu progreso actual:</strong></p>
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ progress_percentage }}%;"></div>
+    </div>
+    <p style="text-align: center; margin-top: 8px;">{{ progress_percentage }}% completado</p>
+    {% if due_date %}
+    <p><strong>Fecha límite:</strong> {{ due_date }}</p>
+    {% endif %}
+</div>
+
+<p>Es importante que completes este proceso a tiempo. ¡Ya has avanzado bastante, continúa así!</p>
+
+<p style="text-align: center;">
+    <a href="{{ assignment_url }}" class="button">Continuar Proceso</a>
+</p>
+
+<p>Si tienes dificultades o preguntas, no dudes en contactar a tu administrador.</p>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Proceso Asignado{% endblock %}
+
+{% block content %}
+<h1>Nuevo Proceso Asignado</h1>
+
+<p>Hola {{ user_name }},</p>
+
+<p>Se te ha asignado un nuevo proceso de onboarding en <strong>{{ tenant_name }}</strong>.</p>
+
+<div class="highlight">
+    <p><strong>Detalles del proceso:</strong></p>
+    <ul>
+        <li>Proceso: {{ flow_title }}</li>
+        {% if due_date %}
+        <li>Fecha límite: {{ due_date }}</li>
+        {% endif %}
+    </ul>
+</div>
+
+<p>Es importante que completes este proceso dentro del plazo establecido. Puedes avanzar a tu ritmo, guardando tu progreso en cualquier momento.</p>
+
+<p style="text-align: center;">
+    <a href="{{ assignment_url }}" class="button">Comenzar Ahora</a>
+</p>
+
+<p>Si tienes alguna pregunta sobre el contenido o necesitas ayuda, contacta a tu administrador.</p>
+{% endblock %}

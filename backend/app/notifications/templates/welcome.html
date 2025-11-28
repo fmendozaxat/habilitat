@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Bienvenido a {{ tenant_name }}{% endblock %}
+
+{% block content %}
+<h1>¡Bienvenido, {{ user_name }}!</h1>
+
+<p>Tu cuenta ha sido creada exitosamente en <strong>{{ tenant_name }}</strong>.</p>
+
+<p>Estamos emocionados de tenerte con nosotros. A través de nuestra plataforma podrás completar tu proceso de onboarding de manera fácil y organizada.</p>
+
+<div class="highlight">
+    <p><strong>¿Qué puedes hacer ahora?</strong></p>
+    <ul>
+        <li>Revisar tus procesos de onboarding asignados</li>
+        <li>Completar los módulos a tu ritmo</li>
+        <li>Seguir tu progreso en tiempo real</li>
+    </ul>
+</div>
+
+<p style="text-align: center;">
+    <a href="{{ login_url }}" class="button">Iniciar Sesión</a>
+</p>
+
+<p>Si tienes alguna pregunta, no dudes en contactar a tu administrador.</p>
+
+<p>¡Bienvenido al equipo!</p>
+{% endblock %}
