@@ -1,9 +1,10 @@
 """Auth API router."""
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.exceptions import UnauthorizedException, ValidationException
+from app.core.rate_limit import limiter, login_rate_limit, strict_rate_limit
 from app.auth.schemas import (
     LoginRequest,
     RegisterRequest,
@@ -20,12 +21,15 @@ from app.users.service import UserService
 from app.users.models import User
 from app.tenants.dependencies import get_current_tenant
 from app.tenants.models import Tenant
+from app.notifications.email_service import EmailService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def register(
+    request: Request,
     data: RegisterRequest,
     tenant: Tenant = Depends(get_current_tenant),
     db: Session = Depends(get_db)
@@ -34,10 +38,8 @@ async def register(
     Register a new user.
 
     Creates a new user account and returns authentication tokens.
-    Email verification token is created but email sending is not implemented yet.
+    Sends email verification.
     """
-    # Validate password strength is already done in schema
-
     # Create user
     user = UserService.create_user(
         db=db,
@@ -52,8 +54,15 @@ async def register(
     # Create email verification token
     verification_token = AuthService.create_email_verification_token(db, user.id)
 
-    # TODO: Send verification email
-    # email_service.send_verification_email(user.email, verification_token.token)
+    # Send verification email
+    EmailService.send_email_verification(
+        db=db,
+        to_email=user.email,
+        user_name=user.full_name,
+        verification_token=verification_token.token,
+        tenant_id=tenant.id,
+        user_id=user.id
+    )
 
     # Create tokens
     tokens = AuthService.create_tokens(db, user)
@@ -78,7 +87,9 @@ async def register(
 
 
 @router.post("/login", response_model=LoginResponse)
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     data: LoginRequest,
     db: Session = Depends(get_db)
 ):
@@ -86,6 +97,7 @@ async def login(
     Login with email and password.
 
     Returns access token, refresh token, and user information.
+    Rate limited to 5 attempts per minute.
     """
     user = AuthService.authenticate_user(db, data.email, data.password)
 
@@ -175,7 +187,9 @@ async def get_me(current_user: User = Depends(get_current_active_user)):
 
 
 @router.post("/password-reset/request", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("3/minute")
 async def request_password_reset(
+    request: Request,
     data: PasswordResetRequest,
     db: Session = Depends(get_db)
 ):
@@ -184,12 +198,23 @@ async def request_password_reset(
 
     Sends password reset email if user exists.
     Always returns success to prevent email enumeration.
+    Rate limited to 3 requests per minute.
     """
     try:
         reset_token = AuthService.create_password_reset_token(db, data.email)
 
-        # TODO: Send password reset email
-        # email_service.send_password_reset_email(data.email, reset_token.token)
+        # Get user for name
+        from app.users.models import User
+        user = db.query(User).filter(User.email == data.email).first()
+        if user and reset_token:
+            EmailService.send_password_reset_email(
+                db=db,
+                to_email=data.email,
+                user_name=user.full_name,
+                reset_token=reset_token.token,
+                tenant_id=user.tenant_id,
+                user_id=user.id
+            )
 
     except ValidationException:
         # Don't reveal if email exists or not
@@ -231,7 +256,9 @@ async def verify_email(
 
 
 @router.post("/email/resend-verification", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("3/minute")
 async def resend_verification_email(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -239,13 +266,21 @@ async def resend_verification_email(
     Resend email verification.
 
     Creates a new verification token and sends it to the user's email.
+    Rate limited to 3 requests per minute.
     """
     if current_user.is_email_verified:
         raise ValidationException("El email ya está verificado")
 
     verification_token = AuthService.create_email_verification_token(db, current_user.id)
 
-    # TODO: Send verification email
-    # email_service.send_verification_email(current_user.email, verification_token.token)
+    # Send verification email
+    EmailService.send_email_verification(
+        db=db,
+        to_email=current_user.email,
+        user_name=current_user.full_name,
+        verification_token=verification_token.token,
+        tenant_id=current_user.tenant_id,
+        user_id=current_user.id
+    )
 
     return {"message": "Email de verificación enviado"}

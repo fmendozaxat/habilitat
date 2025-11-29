@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
+from slowapi.errors import RateLimitExceeded
+
 from app.core.config import settings
 from app.core.middleware import (
     TenantMiddleware,
@@ -16,6 +18,7 @@ from app.core.middleware import (
     SecurityHeadersMiddleware,
     RequestIDMiddleware
 )
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 
 
 # Configure logging
@@ -62,6 +65,10 @@ app = FastAPI(
     openapi_url=f"{settings.API_PREFIX}/openapi.json",
     lifespan=lifespan
 )
+
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 
 # ============================================================================

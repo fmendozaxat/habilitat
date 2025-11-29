@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Verifica tu correo electrónico{% endblock %}
+
+{% block content %}
+<h1>Verifica tu correo</h1>
+
+<p>Hola {{ user_name }},</p>
+
+<p>Gracias por registrarte. Para completar tu registro y activar tu cuenta, necesitamos verificar tu dirección de correo electrónico.</p>
+
+<p style="text-align: center;">
+    <a href="{{ verify_url }}" class="button">Verificar Correo</a>
+</p>
+
+<div class="highlight">
+    <p><strong>¿Por qué verificar?</strong></p>
+    <ul>
+        <li>Protege tu cuenta de accesos no autorizados</li>
+        <li>Te permite recibir notificaciones importantes</li>
+        <li>Habilita la recuperación de contraseña</li>
+    </ul>
+</div>
+
+<p><small>Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:</small></p>
+<p><small>{{ verify_url }}</small></p>
+
+<p><small>Si no creaste esta cuenta, puedes ignorar este correo.</small></p>
+{% endblock %}

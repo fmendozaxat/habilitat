@@ -42,6 +42,16 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    @field_validator("JWT_SECRET_KEY")
+    @classmethod
+    def validate_jwt_secret(cls, v: str) -> str:
+        """Validate JWT secret key is strong enough."""
+        if len(v) < 32:
+            raise ValueError(
+                "JWT_SECRET_KEY must be at least 32 characters long for security"
+            )
+        return v
+
     # CORS
     CORS_ORIGINS: List[str] | str = ["http://localhost:3000"]
     CORS_ALLOW_CREDENTIALS: bool = True
@@ -60,6 +70,13 @@ class Settings(BaseSettings):
     # Email
     SENDGRID_API_KEY: str | None = None
     FROM_EMAIL: str = "noreply@habilitat.com"
+
+    # Frontend
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    # Rate Limiting
+    RATE_LIMIT_PER_MINUTE: int = 60
+    RATE_LIMIT_LOGIN_PER_MINUTE: int = 5
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 20

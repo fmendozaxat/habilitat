@@ -18,6 +18,7 @@ from app.users import schemas
 from app.users.models import User
 from app.users.service import UserService
 from app.users.dependencies import get_tenant_admin_user
+from app.notifications.email_service import EmailService
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -234,8 +235,16 @@ async def invite_user(
         data
     )
 
-    # TODO: Send invitation email via notifications module
-    # await notification_service.send_invitation_email(invitation)
+    # Send invitation email
+    EmailService.send_invitation_email(
+        db=db,
+        to_email=invitation.email,
+        inviter_name=current_user.full_name,
+        tenant_name=tenant.name,
+        invitation_token=invitation.token,
+        expires_at=invitation.expires_at,
+        tenant_id=tenant.id
+    )
 
     return invitation
 
@@ -287,8 +296,16 @@ async def resend_invitation(
     """
     invitation = UserService.resend_invitation(db, invitation_id, tenant.id)
 
-    # TODO: Send invitation email via notifications module
-    # await notification_service.send_invitation_email(invitation)
+    # Send invitation email
+    EmailService.send_invitation_email(
+        db=db,
+        to_email=invitation.email,
+        inviter_name=current_user.full_name,
+        tenant_name=tenant.name,
+        invitation_token=invitation.token,
+        expires_at=invitation.expires_at,
+        tenant_id=tenant.id
+    )
 
     return invitation
 

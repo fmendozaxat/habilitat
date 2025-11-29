@@ -1,8 +1,8 @@
 """
-Email service for sending emails using templates.
+Email service for sending emails using SendGrid and Jinja2 templates.
 """
 
-import os
+import logging
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any
@@ -13,17 +13,21 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.notifications.models import EmailLog
 
+logger = logging.getLogger(__name__)
+
 
 class EmailService:
-    """Service for rendering and sending emails."""
+    """Service for rendering and sending emails via SendGrid."""
 
     _instance = None
     _env: Environment | None = None
+    _sg_client = None
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._setup_templates()
+            cls._setup_sendgrid()
         return cls._instance
 
     @classmethod
@@ -40,6 +44,21 @@ class EmailService:
         )
 
     @classmethod
+    def _setup_sendgrid(cls):
+        """Setup SendGrid client if API key is configured."""
+        if settings.SENDGRID_API_KEY:
+            try:
+                from sendgrid import SendGridAPIClient
+                cls._sg_client = SendGridAPIClient(settings.SENDGRID_API_KEY)
+                logger.info("SendGrid client initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize SendGrid: {e}")
+                cls._sg_client = None
+        else:
+            logger.warning("SENDGRID_API_KEY not configured - emails will be logged only")
+            cls._sg_client = None
+
+    @classmethod
     def render_template(cls, template_name: str, **context) -> str:
         """Render an email template with context."""
         if cls._env is None:
@@ -47,6 +66,43 @@ class EmailService:
 
         template = cls._env.get_template(template_name)
         return template.render(**context)
+
+    @classmethod
+    def _send_via_sendgrid(cls, to_email: str, to_name: str | None, subject: str, html_content: str) -> tuple[bool, str | None, str | None]:
+        """
+        Send email via SendGrid.
+        Returns: (success, external_id, error_message)
+        """
+        if cls._sg_client is None:
+            cls._setup_sendgrid()
+            if cls._sg_client is None:
+                return False, None, "SendGrid not configured"
+
+        try:
+            from sendgrid.helpers.mail import Mail, Email, To, Content
+
+            from_email = Email(settings.FROM_EMAIL, settings.APP_NAME)
+            to_email_obj = To(to_email, to_name) if to_name else To(to_email)
+            content = Content("text/html", html_content)
+
+            mail = Mail(from_email, to_email_obj, subject, content)
+
+            response = cls._sg_client.send(mail)
+
+            if response.status_code in (200, 201, 202):
+                # Extract message ID from headers
+                message_id = response.headers.get("X-Message-Id", "")
+                logger.info(f"Email sent successfully to {to_email}, message_id: {message_id}")
+                return True, message_id, None
+            else:
+                error_msg = f"SendGrid returned status {response.status_code}"
+                logger.error(f"Failed to send email: {error_msg}")
+                return False, None, error_msg
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"SendGrid error: {error_msg}")
+            return False, None, error_msg
 
     @staticmethod
     def send_email(
@@ -63,10 +119,10 @@ class EmailService:
     ) -> EmailLog:
         """
         Send an email and log it.
-
-        In production, this would integrate with an email provider
-        (SendGrid, AWS SES, etc.). For now, it logs the email.
+        Uses SendGrid in production, logs to console in debug mode.
         """
+        service = EmailService()
+
         # Create log entry
         email_log = EmailLog(
             tenant_id=tenant_id,
@@ -83,30 +139,40 @@ class EmailService:
         try:
             # Render template if provided
             if template_name and not html_content:
-                service = EmailService()
                 html_content = service.render_template(
                     template_name,
                     **template_data or {}
                 )
 
-            # In production, send via email provider here
-            # For now, we simulate success
-            if settings.DEBUG:
-                # In debug mode, just log to console
-                print(f"[EMAIL] To: {to_email}")
-                print(f"[EMAIL] Subject: {subject}")
-                print(f"[EMAIL] Type: {email_type}")
-                if html_content:
-                    print(f"[EMAIL] Content length: {len(html_content)} chars")
+            if not html_content:
+                raise ValueError("No HTML content provided and no template specified")
 
-            # Mark as sent
-            email_log.is_sent = True
-            email_log.sent_at = datetime.now(timezone.utc)
+            # Send via SendGrid or log in debug mode
+            if settings.DEBUG and not settings.SENDGRID_API_KEY:
+                # Debug mode without SendGrid - just log
+                logger.info(f"[EMAIL DEBUG] To: {to_email}")
+                logger.info(f"[EMAIL DEBUG] Subject: {subject}")
+                logger.info(f"[EMAIL DEBUG] Type: {email_type}")
+                logger.info(f"[EMAIL DEBUG] Content length: {len(html_content)} chars")
+                email_log.is_sent = True
+                email_log.sent_at = datetime.now(timezone.utc)
+                email_log.external_id = "debug-mode"
+            else:
+                # Production mode - send via SendGrid
+                success, external_id, error_msg = service._send_via_sendgrid(
+                    to_email, to_name, subject, html_content
+                )
 
-            # In real implementation, store external ID from provider
-            # email_log.external_id = response.id
+                if success:
+                    email_log.is_sent = True
+                    email_log.sent_at = datetime.now(timezone.utc)
+                    email_log.external_id = external_id
+                else:
+                    email_log.is_sent = False
+                    email_log.error_message = error_msg
 
         except Exception as e:
+            logger.error(f"Email send error: {e}")
             email_log.is_sent = False
             email_log.error_message = str(e)
 
@@ -193,6 +259,33 @@ class EmailService:
             template_data={
                 "user_name": user_name,
                 "reset_url": reset_url
+            },
+            tenant_id=tenant_id,
+            user_id=user_id
+        )
+
+    @staticmethod
+    def send_email_verification(
+        db: Session,
+        to_email: str,
+        user_name: str,
+        verification_token: str,
+        tenant_id: int | None = None,
+        user_id: int | None = None
+    ) -> EmailLog:
+        """Send email verification."""
+        verify_url = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
+
+        return EmailService.send_email(
+            db=db,
+            to_email=to_email,
+            to_name=user_name,
+            subject="Verifica tu correo electrónico",
+            email_type="email_verification",
+            template_name="email_verification.html",
+            template_data={
+                "user_name": user_name,
+                "verify_url": verify_url
             },
             tenant_id=tenant_id,
             user_id=user_id
