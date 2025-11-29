@@ -140,12 +140,33 @@ async def root():
 async def health_check():
     """
     Health check endpoint for monitoring and load balancers.
+    Verifies database connectivity.
     """
-    return {
+    from app.core.database import get_db
+    from sqlalchemy import text
+
+    health_status = {
         "status": "healthy",
         "service": settings.APP_NAME,
-        "environment": settings.APP_ENV
+        "environment": settings.APP_ENV,
+        "checks": {
+            "database": "unknown"
+        }
     }
+
+    # Check database connectivity
+    try:
+        db = next(get_db())
+        db.execute(text("SELECT 1"))
+        health_status["checks"]["database"] = "healthy"
+    except Exception as e:
+        health_status["status"] = "unhealthy"
+        health_status["checks"]["database"] = f"unhealthy: {str(e)}" if settings.DEBUG else "unhealthy"
+        logger.error(f"Health check failed - Database: {e}")
+
+    status_code = 200 if health_status["status"] == "healthy" else 503
+
+    return JSONResponse(content=health_status, status_code=status_code)
 
 
 @app.get(f"{settings.API_PREFIX}/")
