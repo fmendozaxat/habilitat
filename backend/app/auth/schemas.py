@@ -70,12 +70,20 @@ class UserAuthResponse(BaseSchema):
     created_at: str
 
 
+class TenantAuthResponse(BaseSchema):
+    id: int
+    name: str
+    slug: str
+    plan: str
+
+
 class LoginResponse(BaseSchema):
     access_token: str
     refresh_token: str
     expires_in: int
     token_type: str = "Bearer"
     user: UserAuthResponse
+    tenant: TenantAuthResponse
 
 
 class RefreshTokenResponse(BaseSchema):

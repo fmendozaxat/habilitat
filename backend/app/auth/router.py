@@ -11,6 +11,7 @@ from app.auth.schemas import (
     PasswordResetRequest,
     PasswordResetConfirm,
     UserAuthResponse,
+    TenantAuthResponse,
     LoginResponse,
     RefreshTokenRequest,
     RefreshTokenResponse
@@ -21,6 +22,7 @@ from app.users.service import UserService
 from app.users.models import User
 from app.tenants.dependencies import get_current_tenant
 from app.tenants.models import Tenant
+from app.tenants.service import TenantService
 from app.notifications.email_service import EmailService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -82,6 +84,12 @@ async def register(
             is_email_verified=user.is_email_verified,
             tenant_id=user.tenant_id,
             created_at=user.created_at.isoformat()
+        ),
+        tenant=TenantAuthResponse(
+            id=tenant.id,
+            name=tenant.name,
+            slug=tenant.slug,
+            plan=tenant.plan
         )
     )
 
@@ -107,6 +115,9 @@ async def login(
     if not user.is_active:
         raise UnauthorizedException("Usuario inactivo")
 
+    # Get user's tenant
+    tenant = TenantService.get_tenant_by_id(db, user.tenant_id)
+
     tokens = AuthService.create_tokens(db, user)
 
     return LoginResponse(
@@ -124,6 +135,12 @@ async def login(
             is_email_verified=user.is_email_verified,
             tenant_id=user.tenant_id,
             created_at=user.created_at.isoformat()
+        ),
+        tenant=TenantAuthResponse(
+            id=tenant.id,
+            name=tenant.name,
+            slug=tenant.slug,
+            plan=tenant.plan
         )
     )
 

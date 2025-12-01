@@ -153,6 +153,7 @@ class UserListResponse(BaseSchema):
     department: str | None
     role: str
     is_active: bool
+    created_at: datetime
 
 
 class UserInvitationResponse(BaseSchema):

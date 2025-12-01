@@ -4,6 +4,7 @@ Revision ID: 003_user_tenant_fk
 Revises: 002_users_auth
 Create Date: 2025-11-18 00:00:00
 
+Note: This migration is now a no-op because the FK was already created in 002.
 """
 from typing import Sequence, Union
 
@@ -19,18 +20,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Add explicit foreign key constraint to users.tenant_id."""
-    # Create explicit foreign key constraint
-    op.create_foreign_key(
-        'users_tenant_id_fkey',
-        'users',
-        'tenants',
-        ['tenant_id'],
-        ['id'],
-        ondelete='CASCADE'
-    )
+    # FK already exists from migration 002, nothing to do
+    pass
 
 
 def downgrade() -> None:
-    """Remove foreign key constraint from users.tenant_id."""
-    op.drop_constraint('users_tenant_id_fkey', 'users', type_='foreignkey')
+    # Nothing to undo
+    pass

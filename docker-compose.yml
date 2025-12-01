@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: habilitat-db
+    environment:
+      POSTGRES_USER: habilitat
+      POSTGRES_PASSWORD: habilitat123
+      POSTGRES_DB: habilitat
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U habilitat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: habilitat-backend
+    environment:
+      - DATABASE_URL=postgresql://habilitat:habilitat123@db:5432/habilitat
+      - JWT_SECRET_KEY=your-super-secret-jwt-key-at-least-32-chars
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - REFRESH_TOKEN_EXPIRE_DAYS=7
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@habilitat.com}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: habilitat-frontend
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+
+volumes:
+  postgres_data:

@@ -90,13 +90,13 @@ def upgrade() -> None:
     op.create_index(
         'ix_content_tenant_type',
         'content_blocks',
-        ['tenant_id', 'block_type'],
+        ['tenant_id', 'content_type'],
         unique=False
     )
     op.create_index(
-        'ix_content_tenant_active',
+        'ix_content_tenant_published',
         'content_blocks',
-        ['tenant_id', 'is_active'],
+        ['tenant_id', 'is_published'],
         unique=False
     )
 
@@ -112,7 +112,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Drop all composite indexes
     op.drop_index('ix_email_logs_tenant_type_sent', table_name='email_logs')
-    op.drop_index('ix_content_tenant_active', table_name='content_blocks')
+    op.drop_index('ix_content_tenant_published', table_name='content_blocks')
     op.drop_index('ix_content_tenant_type', table_name='content_blocks')
     op.drop_index('ix_progress_assignment_completed', table_name='module_progress')
     op.drop_index('ix_progress_assignment_module', table_name='module_progress')
